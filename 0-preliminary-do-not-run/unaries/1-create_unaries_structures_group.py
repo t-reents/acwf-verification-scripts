@@ -9,6 +9,7 @@ import ase.data
 import ase.visualize
 
 from aiida.orm import StructureData, Group, QueryBuilder
+import argparse
 
 # Cells, in units of alat
 SC_CELL = [1.0, 1.0, 1.0]
@@ -16,9 +17,10 @@ BCC_CELL = [[-0.5, 0.5, 0.5], [0.5, -0.5, 0.5], [0.5, 0.5, -0.5]]
 FCC_CELL = [[0.0, 0.5, 0.5], [0.5, 0.0, 0.5], [0.5, 0.5, 0.0]]
 DIAMOND_CELL = FCC_CELL
 
-Z_MAX = 96
+Z_MIN = 97
+Z_MAX = 103
 SET_NAME = 'unaries-verification-PBE-v1'
-AIIDA_GROUP_LABEL = f'acwf-verification/{SET_NAME}/structures'
+AIIDA_GROUP_LABEL = f'acwf-verification/{SET_NAME}/structures-test'
 GENERATE_XSF_FILES = False
 
 def get_cubic_unaries(element, alats):
@@ -64,7 +66,7 @@ def get_cubic_unaries(element, alats):
 
 def get_aiida_structures(alats):
     all_structures = {}
-    for Z in range(1, 96+1):
+    for Z in range(Z_MIN, Z_MAX+1):
         element = ase.data.chemical_symbols[Z]
         unaries = get_cubic_unaries(element, alats)
 
@@ -80,9 +82,9 @@ def get_aiida_structures(alats):
 
 
 if __name__ == "__main__":
-    with open("lattice_parameters_unaries-verification-PBE-v1.json") as fhandle:
+    with open("/Users/treents/project/aiida-cwf/git/acwf-verification-scripts/acwf_paper_plots/plots/supplementary/first_neighbor_distances/wien2k_pbe_new_alats.json") as fhandle:
         alats_wien2k = json.load(fhandle)
-
+    
     subfolder = f'xsfs-{SET_NAME}'
 
     # Create XSF files
@@ -91,7 +93,7 @@ if __name__ == "__main__":
             print(f"Remove the '{subfolder}' folder first.")
             sys.exit(1)
         os.makedirs(subfolder)
-        for Z in range(1, Z_MAX+1):
+        for Z in range(Z_MIN, Z_MAX+1):
             element = ase.data.chemical_symbols[Z]
             unaries = get_cubic_unaries(element, alats_wien2k)
             for crystal_structure_label, unary in unaries.items():

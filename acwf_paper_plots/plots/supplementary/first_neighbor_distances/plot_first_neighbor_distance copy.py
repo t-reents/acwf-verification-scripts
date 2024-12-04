@@ -3,14 +3,12 @@ import json
 import os
 import sys
 from collections import defaultdict
-from copy import deepcopy
 
 from ase.data import chemical_symbols, atomic_numbers
 import numpy as np
 import pylab as pl
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
-Z_max = 103
+Z_max = 96
 Pettifor_max = 103
 
 # Precompute Pettifor values
@@ -27,6 +25,7 @@ inverse_pettifor_to_Z = [None] * (max(pettifor_scale.values()) + 1)
 for symbol, pettifor in pettifor_scale.items():
     inverse_pettifor_to_Z[pettifor] = atomic_numbers[symbol]
 
+#print(inverse_pettifor_to_Z)
 
 alat_to_first_neighbor_factor = {
     'SC': 1.,
@@ -76,18 +75,12 @@ def get_alat_from_raw_json(json_data):
         element, config = key.split('-')
         if config.startswith('X/'):
             config = config[len('X/'):]
-        
-        # if key not in json_data['num_atoms_in_sim_cell']:
-        #     continue
 
         if values is None:
             data[config][element] = None
         else:
             volume = values['min_volume']
-            # num_atoms_in_sim_cell = json_data['num_atoms_in_sim_cell'][key]
-            num_atoms_in_sim_cell = 2 if 'Diamond' in config else 1
-            if key in json_data['num_atoms_in_sim_cell']:
-                assert json_data['num_atoms_in_sim_cell'][key] == num_atoms_in_sim_cell
+            num_atoms_in_sim_cell = json_data['num_atoms_in_sim_cell'][key]
             volume_per_atom = volume / num_atoms_in_sim_cell
             cubic_volume = volume_per_atom * volume_per_atom_to_cubic_volume[config]
             data[config][element] = cubic_volume ** (1/3)
@@ -149,7 +142,7 @@ def generate_plots(fleur_alats, wien2k_alats, plot_vs_pettifor=False):
                     # In case Z is None, I pre-set to None so the point is not plotted
                     first_neighbor = None
                     if Z <= Z_max:
-                        if average_alats[conf].get(chemical_symbols[Z], None) is None:
+                        if average_alats[conf][chemical_symbols[Z]] is None:
                             print(f"WARNING: MISSING {chemical_symbols[Z]} -> {conf}")
                         else:
                             # alat * factor
@@ -216,8 +209,8 @@ def generate_subplots(data_dict, plot_vs_pettifor=False):
     # Check that all functionals have the same configurations and elements
     functionals = list(data_dict.keys())
     assert all(data_dict[func].keys() == data_dict[functionals[0]].keys() for func in functionals)
-    # for config in data_dict[functionals[0]]:
-    #     assert all(data_dict[func][config].keys() == data_dict[functionals[0]][config].keys() for func in functionals)
+    for config in data_dict[functionals[0]]:
+        assert all(data_dict[func][config].keys() == data_dict[functionals[0]][config].keys() for func in functionals)
 
     valid_configurations = list(data_dict[functionals[0]].keys())
 
@@ -227,7 +220,7 @@ def generate_subplots(data_dict, plot_vs_pettifor=False):
         pettifor_values = [False]
     for plot_vs_pettifor in pettifor_values:
         fig, axs = pl.subplots(len(valid_configurations), 1, figsize=(9, 3 * len(valid_configurations)))
-        pl.subplots_adjust(left=0.07, right=0.99, bottom=0.05, top=0.95, hspace=0.5)
+        pl.subplots_adjust(left=0.07, right=0.99, bottom=0.05, top=0.95, hspace=0.4)
         if plot_vs_pettifor:
             x = np.arange(1, max(pettifor_scale.values()) + 1)
         else:
@@ -250,7 +243,7 @@ def generate_subplots(data_dict, plot_vs_pettifor=False):
 
                     first_neighbor = None
                     if Z <= Z_max:
-                        if data_dict[func][conf].get(chemical_symbols[Z], None) is None:
+                        if data_dict[func][conf][chemical_symbols[Z]] is None:
                             print(f"WARNING: MISSING {chemical_symbols[Z]} -> {conf} for {func}")
                         else:
                             first_neighbor = data_dict[func][conf][chemical_symbols[Z]] * alat_to_first_neighbor_factor[conf]
@@ -258,8 +251,8 @@ def generate_subplots(data_dict, plot_vs_pettifor=False):
 
                 marker = MARKERS[conf]
                 latex_conf = "".join([f"$_{char}$" if char in "0123456789" else char for char in conf])
-                ax.plot(x, y, f'{marker}-', markersize=3, linewidth=1, label=f'{func}', alpha=0.5)
-                ax.set_title(f'{latex_conf}')
+                ax.plot(x, y, f'{marker}-', markersize=3, linewidth=1, label=f'{func} - {latex_conf}')
+
             ax.set_ylabel("First-neighbor distance (Å)")
             ax.xaxis.set_major_locator(MultipleLocator(10))
             ax.minorticks_on()
@@ -281,7 +274,7 @@ def generate_subplots(data_dict, plot_vs_pettifor=False):
                 sec.set_xticklabels([chemical_symbols[Z] for Z in ticks_x], fontsize=7)
 
             sec.tick_params(rotation=90)
-            ax.legend(loc='lower right', ncol=3)
+            ax.legend(loc='upper right', ncol=2)
 
         fname_suffix = "-vs_mendeleev.pdf" if plot_vs_pettifor else ""
         fname = f'first-neighbor-distance-subplots{fname_suffix}.pdf'
@@ -310,132 +303,11 @@ with open(os.path.join(DATA_FOLDER, "labels.json")) as fhandle:
 
     fleur_alats = get_alat_from_raw_json(fleur_data)
     wien2k_alats = get_alat_from_raw_json(wien2k_data)
-    new_data_sub_path = '/Users/treents/project/aiida-cwf/data'
-
-    with open(os.path.join(new_data_sub_path, 'wien2k/unaries_prec3_lda.json')) as fhandle:
-        wien2k_lda_data = deepcopy(wien2k_data)
-        _wien2k_lda_data = json.load(fhandle)
-        wien2k_lda_data['BM_fit_data'] = _wien2k_lda_data['BM_fit_data']
-
-    with open(os.path.join(new_data_sub_path, 'wien2k/unaries_prec3_pbesol.json')) as fhandle:
-        wien2k_pbesol_data = deepcopy(wien2k_data)
-        _wien2k_pbesol_data = json.load(fhandle)
-        wien2k_pbesol_data['BM_fit_data'] = _wien2k_pbesol_data['BM_fit_data']
-        
-    with open(os.path.join(new_data_sub_path, 'wien2k/unaries_prec3_pbe.json')) as fhandle:
-        wien2k_pbe_data = deepcopy(wien2k_data)
-        _wien2k_pbe_data = json.load(fhandle)
-        wien2k_pbe_data['BM_fit_data'] = _wien2k_pbe_data['BM_fit_data']
-        
-    # with open(os.path.join(new_data_sub_path, 'wien2k/oxides_prec3_pbe.json')) as fhandle:
-    #     wien2k_ox_pbe_data = deepcopy(wien2k_data)
-    #     _wien2k_ox_pbe_data = json.load(fhandle)
-    #     wien2k_ox_pbe_data['BM_fit_data'] = _wien2k_ox_pbe_data['BM_fit_data']
-        
-        
-    with open(
-        os.path.join(new_data_sub_path, 'sirius_cp2k/LDA_v3.json')
-        ) as fhandle:
-        cp2k_lda_data = json.load(fhandle)
-    
-    with open(
-        os.path.join(new_data_sub_path, 'sirius_cp2k/PBEsol_v3.json')
-        ) as fhandle:
-        cp2k_pbesol_data = json.load(fhandle)
-        
-    with open(
-        os.path.join(new_data_sub_path, 'sirius_cp2k/results-unaries-verification-v1-cp2k_PBE.json')
-        ) as fhandle:
-        cp2k_pbe_data = json.load(fhandle)
-    
-    with open(
-        os.path.join(new_data_sub_path, 'fleur/results-unaries-LDA-PW92-fleur_centralVolume.json')   
-    ) as fhandle:
-        fleur_lda_data = json.load(fhandle)
-    
-    wien2k_lda_alats = get_alat_from_raw_json(wien2k_lda_data)
-    wien2k_pbesol_alats = get_alat_from_raw_json(wien2k_pbesol_data)
-    wien2k_pbe_alats = get_alat_from_raw_json(wien2k_pbe_data)
-    cp2k_lda_alats = get_alat_from_raw_json(cp2k_lda_data)
-    cp2k_pbesol_alats = get_alat_from_raw_json(cp2k_pbesol_data)
-    cp2k_pbe_alats = get_alat_from_raw_json(cp2k_pbe_data)
-    fleur_lda_alats = get_alat_from_raw_json(fleur_lda_data)
-    
-    
-    with open('wien2k_pbe_alats.json', 'w') as fhandle:
-        json.dump(wien2k_alats, fhandle, indent=4)
-    with open('wien2k_pbe_new_alats.json', 'w') as fhandle:
-        json.dump(wien2k_pbe_alats, fhandle, indent=4)
-    with open('wien2k_lda_alats.json', 'w') as fhandle:
-        json.dump(wien2k_lda_alats, fhandle, indent=4)
-    with open('wien2k_pbesol_alats.json', 'w') as fhandle:
-        json.dump(wien2k_pbesol_alats, fhandle, indent=4)
 
     data_dict = {
-        # 'FLEUR': fleur_alats,
-        'PBE': wien2k_alats,
-        'LDA': wien2k_lda_alats,
-        'PBEsol': wien2k_pbesol_alats,
-        # 'LDA-CP2K': cp2k_lda_alats
+        'FLEUR': fleur_alats,
+        'WIEN2k': wien2k_alats
     }
 
     generate_plots(fleur_alats, wien2k_alats, plot_vs_pettifor=False)
-    generate_subplots(data_dict, plot_vs_pettifor=False)
-
-    
-    alat_diff_data = [
-        # ('FLEUR-LDA', fleur_lda_alats),
-        # ('WIEN2k-PBE', wien2k_alats),
-        # ('CP2K-LDA', cp2k_lda_alats),
-        # ('WIEN2k-LDA', wien2k_lda_alats),
-        ('CP2K-PBEsol', cp2k_pbesol_alats),
-        # ('CP2K-PBE', cp2k_pbe_alats),
-        ('WIEN2k-PBEsol', wien2k_pbesol_alats),
-    ]
-    diff_above_1perc = {}
-
-    fig, ax = pl.subplots(ncols=4, figsize=(12, 2), sharey=True)
-    pl.subplots_adjust(wspace=0.3)
-    for i, config in enumerate(cp2k_lda_alats):
-        rel_diff = []
-        common_elements = set(
-            alat_diff_data[0][1][config].keys()
-        ).intersection(
-            alat_diff_data[1][1][config].keys()
-        )
-        for element in common_elements:
-            alat0 = alat_diff_data[0][1][config][element]
-            alat1 = alat_diff_data[1][1][config][element]
-            if alat0 is None or alat1 is None:
-                continue
-            rel_diff.append(
-                (
-                    (
-                        alat0 - alat1
-                        ) / alat0 * 100
-                    )
-            )
-            if abs(rel_diff[-1]) > 1:
-                diff_above_1perc.setdefault(config, {})[element] = {
-                    'wien2k': alat_diff_data[0][1][config][element], 'cp2k': alat_diff_data[1][1][config][element]
-                    }
-
-            
-        print(f"min, max rel diff for {config}: {min(rel_diff):.3f}\t{max(rel_diff):.3f}")
-        ax[i].hist(rel_diff, bins=np.arange(-100.5, 100, 0.5), label=config)
-        # ax[i].set_title(config)
-        ax[i].legend()
-        lab0 = alat_diff_data[0][0]
-        lab1 = alat_diff_data[1][0]
-        ax[i].set_xlabel("$\\frac{a_{"f"{lab0}""} - a_{"f"{lab1}""}}{a_{"f"{lab0}""}}$ (%)", fontsize=12)
-        ax[i].xaxis.minorticks_on()
-        ax[i].yaxis.minorticks_on()
-        # ax[i].xaxis
-        # ax[i].yaxis.set_minor_locator(MultipleLocator(0.1))
-        ax[i].set_xlim(-5, 5)
-        ax[i].xaxis.set_major_formatter(FormatStrFormatter('%d%%'))
-    ax[0].set_ylabel("Occurrences")
-        
-    with open(f'{lab0}_{lab1}_diff_above_1perc.json', 'w') as fhandle:
-        json.dump(diff_above_1perc, fhandle, indent=4)
-    pl.savefig(f'histogram_{lab0}_vs_{lab1}.pdf', bbox_inches='tight')
+    # generate_subplots(data_dict, plot_vs_pettifor=False)
