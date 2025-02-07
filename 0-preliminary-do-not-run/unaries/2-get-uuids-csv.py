@@ -1,9 +1,9 @@
 #!/usr/bin/env runaiida
-SET_NAME = 'unaries-verification-PBE-v1'
+SET_NAME = 'unaries-verification-PBE-actinides-v1'
 
 out_lines = []
-for node in Group.get(label=f'acwf-verification/{SET_NAME}/structures').nodes:
-    out_lines.append(f"{node.extras['element']},{node.extras['configuration']},{node.uuid}")
+for node in Group.collection.get(label=f'acwf-verification/{SET_NAME}/structures').nodes:
+    out_lines.append(f"{node.base.extras.all['element']},{node.base.extras.all['configuration']},{node.uuid}")
 out_lines.sort()
 
 fname = f"{SET_NAME}_structures_uuids.csv"

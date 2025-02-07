@@ -17,10 +17,10 @@ BCC_CELL = [[-0.5, 0.5, 0.5], [0.5, -0.5, 0.5], [0.5, 0.5, -0.5]]
 FCC_CELL = [[0.0, 0.5, 0.5], [0.5, 0.0, 0.5], [0.5, 0.5, 0.0]]
 DIAMOND_CELL = FCC_CELL
 
-Z_MIN = 97
+Z_MIN = 1
 Z_MAX = 103
-SET_NAME = 'unaries-verification-PBE-v1'
-AIIDA_GROUP_LABEL = f'acwf-verification/{SET_NAME}/structures-test'
+SET_NAME = 'unaries-verification-PBE-actinides-v1'
+AIIDA_GROUP_LABEL = f'acwf-verification/{SET_NAME}/structures'
 GENERATE_XSF_FILES = False
 
 def get_cubic_unaries(element, alats):
@@ -73,16 +73,16 @@ def get_aiida_structures(alats):
         for crystal_structure_label, unary in unaries.items():
             structure = StructureData(ase=unary)
             configuration = f'X/{crystal_structure_label}'
-            structure.set_extra('element', element)
-            structure.set_extra('Z', Z)
-            structure.set_extra('configuration', configuration)
+            structure.base.extras.set('element', element)
+            structure.base.extras.set('Z', Z)
+            structure.base.extras.set('configuration', configuration)
             all_structures[(element, configuration)] = structure
     return all_structures
 
 
 
 if __name__ == "__main__":
-    with open("/Users/treents/project/aiida-cwf/git/acwf-verification-scripts/acwf_paper_plots/plots/supplementary/first_neighbor_distances/wien2k_pbe_new_alats.json") as fhandle:
+    with open(f"./lattice_parameters_{SET_NAME}.json") as fhandle:
         alats_wien2k = json.load(fhandle)
     
     subfolder = f'xsfs-{SET_NAME}'
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     print(f"# {len(existing)} structures already in the group")
     print(f"# {len(missing)} structures that I will add to the group")
 
-    group, _ = Group.objects.get_or_create(label=AIIDA_GROUP_LABEL)
+    group, _ = Group.collection.get_or_create(label=AIIDA_GROUP_LABEL)
     structures_to_add = [all_structures[extras] for extras in missing]
     # I need to store all these structures first
     for structure in structures_to_add:

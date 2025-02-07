@@ -1,4 +1,4 @@
-import pymatgen
+import pymatgen, pymatgen.core
 from ase.data import chemical_symbols
 
 from aiida.plugins import DataFactory
@@ -6,7 +6,7 @@ from aiida import orm
 
 SET_NAME = 'oxides-verification-PBE-v1'
 
-STRUCTURES_FULL_GROUP_LABEL = f'acwf-verification/{SET_NAME}/structures'
+STRUCTURES_FULL_GROUP_LABEL = f'acwf-verification/{SET_NAME}/structures-temp'
 
 Structure = DataFactory('structure')
 group, _ = orm.Group.objects.get_or_create(label=STRUCTURES_FULL_GROUP_LABEL)
@@ -17,7 +17,7 @@ query.append(orm.Group, tag='group', filters={'label': STRUCTURES_FULL_GROUP_LAB
 all_structures = {(res[0]['element'], res[0]['configuration']): res[1] for res in query.all()}
 
 structures = []
-for Z in range(1, 96+1):
+for Z in range(97, 104):
     element_name = chemical_symbols[Z]
     #if Z == 8: # Oxygen is not there
     #    continue
@@ -27,6 +27,7 @@ for Z in range(1, 96+1):
             print(f"- Skipping import of {element_name}-{configuration} as node {structure_pk} exists already in the group")
             continue
         filename = f'cifs-{SET_NAME}/POSCAR_{element_name}_{configuration}.cif'
+        filename = f'xsfs-oxides-verification-PBE-v1-temp/{element_name}-{configuration}.xsf'
         pmg_structure = pymatgen.core.Structure.from_file(filename)
         structure = Structure(pymatgen=pmg_structure)
 
