@@ -50,7 +50,17 @@ USE_AE_AVERAGE_AS_REFERENCE = True
 REFERENCE_CODE_LABEL = "FLEUR@LAPW+LO"
 SKIP_PLOT_FOR_QUANTITIES = ['delta_per_formula_unit', 'delta_per_formula_unit_over_b0']
 LABELS_KEY = 'methods-main'
-ONLY_CODES = None #["CASTEP@PW|C19MK2", "Quantum ESPRESSO@PW|SSSP-prec-v1.3"] #["ABINIT@PW|PseudoDojo-v0.5", "BigDFT@DW|HGH-K(Valence)"]
+
+
+LABELS_KEY = 'AE-verification-2025'
+ONLY_CODES = ['FHI-aims-PBE-really-tight-v2'] #["CASTEP@PW|C19MK2", "Quantum ESPRESSO@PW|SSSP-prec-v1.3"] #["ABINIT@PW|PseudoDojo-v0.5", "BigDFT@DW|HGH-K(Valence)"]
+SET_NAMES = [
+    'unaries', 
+    # 'oxides'
+    ]
+DATA_FOLDER = '/Users/treents/project/aiida-cwf/git/acwf-verification-scripts/acwf_paper_plots/code-data/'
+REFERENCE_CODE_LABEL = "Fleur-LDA"
+USE_AE_AVERAGE_AS_REFERENCE = True
 
 CBAR_MAX_DICT = {}
 
@@ -64,7 +74,7 @@ EXPORT_JSON=False
 
 PRINT_LATEX_CODE=False
 
-SET_NAMES = ['unaries', 'oxides']
+# SET_NAMES = ['unaries', 'oxides']
 QUANTITIES = ['epsilon', 'nu', 'delta_per_formula_unit', 'delta_per_formula_unit_over_b0']
 
 ## ------------------------------------------------------------------------------------------------
@@ -293,7 +303,7 @@ quantity_for_comparison_map = {
 
 def load_data(SET_NAME):
 
-    DATA_FOLDER = "../../../code-data"
+    # DATA_FOLDER = "../../../code-data"
     with open(os.path.join(DATA_FOLDER, "labels.json")) as fhandle:
         labels_data = json.load(fhandle)
     
@@ -808,7 +818,8 @@ def plot_periodic_tables(SET_NAME, QUANTITY, measures_max_and_avg, master_data_d
         collect = master_data_dict[SET_NAME]["calculated_quantities"][QUANTITY][plugin]
 
         # Way to decide whether is a unaries or an oxides set is a bit fragile.
-        if collect["X/Diamond"]["values"]:
+        # if collect["X/Diamond"]["values"]:
+        if 'unaries' in SET_NAME:
             unaries = True
             list_confs = ["X/Diamond","X/FCC","X/BCC","X/SC"]
         else:
@@ -997,37 +1008,44 @@ if __name__ == "__main__":
                 master_data_dict[SET_NAME]["calculated_quantities"][QUANTITY][plugin] = collect
 
 
-    output_quantity_dict = {}
-    for QUANTITY in QUANTITIES:
-        output_quantity_dict[QUANTITY] = {}
-        for SET_NAME in SET_NAMES:
-            output_quantity_dict[QUANTITY][SET_NAME] = {}
-            intermediate_dict = master_data_dict[SET_NAME]['calculated_quantities'][QUANTITY]['WIEN2k@(L)APW+lo+LO']
-            for configuration, intermediate_data in intermediate_dict.items():
-                output_quantity_dict[QUANTITY][SET_NAME].update(
-                    dict(zip(
-                        [f"{k}-{configuration}" for k in intermediate_data['elements']],
-                        intermediate_data['values']
-                    ))
-                )
+    # output_quantity_dict = {}
+    # for QUANTITY in QUANTITIES:
+    #     output_quantity_dict[QUANTITY] = {}
+    #     for SET_NAME in SET_NAMES:
+    #         output_quantity_dict[QUANTITY][SET_NAME] = {}
+    #         intermediate_dict = master_data_dict[SET_NAME]['calculated_quantities'][QUANTITY]['WIEN2k@(L)APW+lo+LO']
+    #         for configuration, intermediate_data in intermediate_dict.items():
+    #             output_quantity_dict[QUANTITY][SET_NAME].update(
+    #                 dict(zip(
+    #                     [f"{k}-{configuration}" for k in intermediate_data['elements']],
+    #                     intermediate_data['values']
+    #                 ))
+    #             )
 
-    # print(output_quantity_dict['nu']['oxides'])
-    ## {'Ac-X2O3': 0.009737865122023147, 'Ag-X2O3': 0.04770355931373145, ..., 'Hg-X2O5': 0.0754615851710017, ...}
-    print(output_quantity_dict['nu']['unaries'])
-    # {'Ac-X/Diamond': 0.04186021792027553, 'Ag-X/Diamond': 0.037339062070366094, ..., 'As-X/BCC': 0.02878620698279048, ...}
+    # # print(output_quantity_dict['nu']['oxides'])
+    # ## {'Ac-X2O3': 0.009737865122023147, 'Ag-X2O3': 0.04770355931373145, ..., 'Hg-X2O5': 0.0754615851710017, ...}
+    # print(output_quantity_dict['nu']['unaries'])
+    # # {'Ac-X/Diamond': 0.04186021792027553, 'Ag-X/Diamond': 0.037339062070366094, ..., 'As-X/BCC': 0.02878620698279048, ...}
 
-    if PRINT_JSON:
-        fname = 'all-measure-quantities-ae.json'
-        with open(fname, 'w') as fhandle:
-            json.dump(output_quantity_dict, fhandle, indent=2)
-        print(f"{fname} written.")
+    # if PRINT_JSON:
+    #     fname = 'all-measure-quantities-ae.json'
+    #     with open(fname, 'w') as fhandle:
+    #         json.dump(output_quantity_dict, fhandle, indent=2)
+    #     print(f"{fname} written.")
 
     measures_max_and_avg = find_code_measures_max_and_avg(master_data_dict)
+    
 
 
     print("Plotting the periodic tables.")
     for SET_NAME in SET_NAMES:
         for QUANTITY in QUANTITIES:
             plot_periodic_tables(SET_NAME, QUANTITY, measures_max_and_avg, master_data_dict)
+            
+            if False:
+                with open(
+                    f"{QUANTITY}-{SET_NAME}-FHI-aims-vs-Fleur.json", 'w'
+                    ) as fhandle:
+                    json.dump(master_data_dict, fhandle, indent=4)
 
     analyze_stats(master_data_dict)

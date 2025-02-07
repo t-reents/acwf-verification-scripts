@@ -8,6 +8,7 @@ import os
 
 import tqdm
 import numpy as np
+import fire
 
 from collections import Counter
 from eos_utils.eosfit_31_adapted import BM, echarge
@@ -29,7 +30,7 @@ def extract_from_failed(node):
     """
     ens=[]
     vols=[]
-    streses=[]
+    stresses=[]
     num_atoms = None
     num_attempt_vols = 0
     for i in node.get_outgoing(link_type=LinkType.CALL_WORK).all():
@@ -50,7 +51,7 @@ def extract_from_failed(node):
                 stress = None
             stresses.append(stress)
 
-    return vols,ens,streses,num_atoms,num_attempt_vols
+    return vols,ens, stresses,num_atoms,num_attempt_vols
 
 
 def get_plugin_name():
@@ -73,17 +74,12 @@ def get_plugin_name():
             "expected by the aiida-common-workflows project"
         ) from exc
 
-PLUGIN_NAME = get_plugin_name()
+# PLUGIN_NAME = get_plugin_name()
 
-if __name__ == "__main__":
-    try:
-        SET_NAME = sys.argv[1]
-    except IndexError:
-        print("Pass as parameter the set name, e.g. oxides-verification-PBE-v1 or unaries-verification-PBE-v1")
-        sys.exit(1)
+def main(set_name, plugin_name, output_dir='outputs'):
 
-    STRUCTURES_GROUP_LABEL = f'acwf-verification/{SET_NAME}/structures/{PLUGIN_NAME}'
-    WORKFLOWS_GROUP_LABEL = f'acwf-verification/{SET_NAME}/workflows/{PLUGIN_NAME}'
+    STRUCTURES_GROUP_LABEL = f'acwf-verification/{set_name}/structures/{plugin_name}'
+    WORKFLOWS_GROUP_LABEL = f'acwf-verification/{set_name}/workflows/{plugin_name}'
 
     # Get all nodes in the output group (EOS workflows)
     group_node_query = orm.QueryBuilder().append(
@@ -237,7 +233,7 @@ if __name__ == "__main__":
 
     data = {
         'script_version': __version__,
-        'set_name': SET_NAME,
+        'set_name': set_name,
         # Mapping from strings like "He-X2O" to a dictionary with the UUIDs of the structure and the EOS workflow
         'uuid_mapping': uuid_mapping,
         # A list of dictionaries with information on the workchains that did not finish with a 0 exit code
@@ -271,7 +267,7 @@ if __name__ == "__main__":
             f"({'<' if system['side'] == 'left' else '>'})"
         )
 
-    fname = f"outputs/warnings-{SET_NAME}-{PLUGIN_NAME}.txt"
+    fname = f"{output_dir}/warnings-{set_name}-{plugin_name}.txt"
     with open(fname, 'w') as fhandle:
         for line in warning_lines:
             fhandle.write(f"{line}\n")
@@ -279,8 +275,13 @@ if __name__ == "__main__":
     print(f"Warning log written to: '{fname}'.")
 
     # Output results to file
-    os.makedirs('outputs', exist_ok=True)
-    fname = f"outputs/results-{SET_NAME}-{PLUGIN_NAME}.json"
+    os.makedirs(output_dir, exist_ok=True)
+    fname = f"{output_dir}/results-{set_name}-{plugin_name}.json"
     with open(fname, 'w') as fhandle:
         json.dump(data, fhandle, indent=2, sort_keys=True)
     print(f"Output results written to: '{fname}'.")
+
+
+if __name__ == "__main__":
+    fire.Fire(main)
+
