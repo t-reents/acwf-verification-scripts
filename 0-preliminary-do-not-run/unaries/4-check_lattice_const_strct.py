@@ -62,7 +62,7 @@ def plot_lattice_constants(lattice_constants):
         sec.set_xticks(ticks_x)
         sec.set_xticklabels([chemical_symbols[Z] for Z in ticks_x], fontsize=7)
         sec.tick_params(rotation=90)
-        plt.savefig('lattice_constants_unaries.png', bbox_inches='tight')
+        plt.savefig(f'lattice_constants_{UNARIES_OXIDES}.pdf', bbox_inches='tight')
         
 def check_lattice_constants(lattice_constants):
     functional_structures_dir_mapping = {

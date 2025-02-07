@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SET_NAME=oxides-verification-PBE-v1
+SET_NAME=oxides-verification-LDA-v1
 
 verdi archive create -G acwf-verification/${SET_NAME}/structures -- acwf-verification_${SET_NAME}_structures.aiida
 

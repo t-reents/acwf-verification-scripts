@@ -21,6 +21,8 @@ Z_MIN = 1
 Z_MAX = 103
 SET_NAME = 'unaries-verification-PBE-actinides-v1'
 AIIDA_GROUP_LABEL = f'acwf-verification/{SET_NAME}/structures'
+SET_NAME = 'unaries-verification-PBE-actinides-v1'
+AIIDA_GROUP_LABEL = f'acwf-verification/{SET_NAME}/structures'
 GENERATE_XSF_FILES = False
 
 def get_cubic_unaries(element, alats):
