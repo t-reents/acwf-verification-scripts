@@ -14,7 +14,6 @@ import acwf_paper_plots.quantities_for_comparison as qc
 # Use this to set a consistent maximum colorbar value
 NU_EPS_FACTOR=1.65
 
-SHOW_IN_BROWSER=False
 DEFAULT_wb0 = 1.0/20.0
 DEFAULT_wb1 = 1.0/400.0
 # Default prefactor if not indicated: 1.
@@ -40,132 +39,139 @@ OUTLIER_THRESHOLD = {
     'delta_per_formula_unit_over_b0': 0. # I put zero, it's not used in this script anyway
     }
 PRINT_NON_EXCELLENT = False
+Z_MAX = 103
 
 ## --------------------------------------------------
 ## "Constants" that might need to be changed, depeding on what Figure is generated
 
-# Whether to use
-USE_AE_AVERAGE_AS_REFERENCE = True
-# The following line is ony used if USE_AE_AVERAGE_AS_REFERENCE is False
-REFERENCE_CODE_LABEL = "FLEUR@LAPW+LO"
-SKIP_PLOT_FOR_QUANTITIES = ['delta_per_formula_unit', 'delta_per_formula_unit_over_b0']
-LABELS_KEY = 'methods-main'
-ONLY_CODES = None #["CASTEP@PW|C19MK2", "Quantum ESPRESSO@PW|SSSP-prec-v1.3"] #["ABINIT@PW|PseudoDojo-v0.5", "BigDFT@DW|HGH-K(Valence)"]
+def _get_config():
+    """Set the default configuration for the script."""
+    config = {}
 
-CBAR_MAX_DICT = {}
+    config['SHOW_PLOT'] = False # Can be False. 'notebook' or 'browser'
+    config['USE_AE_AVERAGE_AS_REFERENCE'] = True
 
-CMAP_TYPE = "quality"
-SET_MAX_SCALE_DICT = {"nu": 1.0*NU_EPS_FACTOR, "epsilon":1.0}
-OUTLIER_COLOR = "#bf0000" # darker red
-#CBAR_MAX_DICT = {"nu": 0.4*NU_EPS_FACTOR, "epsilon":0.4}
-HIGHLIGHT = {}
+    # The following line is ony used if USE_AE_AVERAGE_AS_REFERENCE is False
+    config['REFERENCE_CODE_LABEL'] = "FLEUR@LAPW+LO"
+    config['SKIP_PLOT_FOR_QUANTITIES'] = ['delta_per_formula_unit', 'delta_per_formula_unit_over_b0']
+    config['LABELS_KEY'] = 'methods-main'
 
-EXPORT_JSON=False
+    config['ONLY_CODES'] = None #["CASTEP@PW|C19MK2", "Quantum ESPRESSO@PW|SSSP-prec-v1.3"] #["ABINIT@PW|PseudoDojo-v0.5", "BigDFT@DW|HGH-K(Valence)"]
+    
+    config['DATA_FOLDER'] = '../../../code-data'
+    config['CBAR_MAX_DICT'] = {}
 
-PRINT_LATEX_CODE=False
+    config['CMAP_TYPE'] = "quality"
+    config['SET_MAX_SCALE_DICT'] = {"nu": 1.0*NU_EPS_FACTOR, "epsilon":1.0}
+    config['OUTLIER_COLOR'] = "#bf0000" # darker red
+    #CBAR_MAX_DICT = {"nu": 0.4*NU_EPS_FACTOR, "epsilon":0.4}
+    config['HIGHLIGHT'] = {}
 
-SET_NAMES = ['unaries', 'oxides']
-QUANTITIES = ['epsilon', 'nu', 'delta_per_formula_unit', 'delta_per_formula_unit_over_b0']
+    config['EXPORT_JSON']=False
+    config['PRINT_LATEX_CODE']=False
+    config['SET_NAMES'] = ['unaries', 'oxides']   
+    config['QUANTITIES'] = ['epsilon', 'nu', 'delta_per_formula_unit', 'delta_per_formula_unit_over_b0']
 
-## ------------------------------------------------------------------------------------------------
-## Override the default variables based on the input argument
+    ## ------------------------------------------------------------------------------------------------
+    ## Override the default variables based on the input argument
 
-EXPORT_SVG = False
-PRINT_JSON = False
+    config['EXPORT_SVG'] = False
+    config['PRINT_JSON'] = False
 
-if len(sys.argv) == 2:
-    if sys.argv[1] == "MAIN":
-        # FIGURE 2 IN MAIN TEXT
-        USE_AE_AVERAGE_AS_REFERENCE = False
-        REFERENCE_CODE_LABEL = "FLEUR@LAPW+LO"
-        LABELS_KEY = 'methods-main'
-        ONLY_CODES = ["WIEN2k@(L)APW+lo+LO"]
-        CBAR_MAX_DICT = {"nu": 0.4*NU_EPS_FACTOR, "epsilon":0.4}
-        EXPORT_SVG = True
-        PRINT_JSON = True
+    if len(sys.argv) == 2:
+        if sys.argv[1] == "MAIN":
+            # FIGURE 2 IN MAIN TEXT
+            config['USE_AE_AVERAGE_AS_REFERENCE'] = False
+            config['REFERENCE_CODE_LABEL'] = "FLEUR@LAPW+LO"
+            config['LABELS_KEY'] = 'methods-main'
+            config['ONLY_CODES'] = ["WIEN2k@(L)APW+lo+LO"]
+            config['CBAR_MAX_DICT'] = {"nu": 0.4*NU_EPS_FACTOR, "epsilon":0.4}
+            config['EXPORT_SVG'] = True
+            config['PRINT_JSON'] = True
 
-    if sys.argv[1] == "SI-all-tables":
-        # Section S14
-        USE_AE_AVERAGE_AS_REFERENCE = True
-        LABELS_KEY = 'methods-main'
-        ONLY_CODES = None
-        EXPORT_JSON=True
-        PRINT_LATEX_CODE=True
+        if sys.argv[1] == "SI-all-tables":
+            # Section S14
+            config['USE_AE_AVERAGE_AS_REFERENCE'] = True
+            config['LABELS_KEY'] = 'methods-main'
+            config['ONLY_CODES'] = None
+            config['EXPORT_JSON']=True
+            config['PRINT_LATEX_CODE']=True
 
-    if sys.argv[1] == "SI-29-vs-960-highlight":
-        # Figure S39
-        USE_AE_AVERAGE_AS_REFERENCE = True
-        LABELS_KEY = 'methods-main'
-        ONLY_CODES = ["CASTEP@PW|C19MK2", "Quantum ESPRESSO@PW|SSSP-prec-v1.3"]
-        QUANTITIES=["epsilon"]
-        HIGHLIGHT = {
-            "unaries": {
-                "epsilon" : {
-                    "CASTEP@PW|C19MK2": {
-                        "X/SC": ["Po"],
-                        "X/FCC": ["Ne", "Al", "Ar", "Ca", "Cu", "Kr", "Sr", "Rh", "Pd", "Ag", "Xe", "Ir", "Pt", "Au", "Pb", "Rn"],
-                        "X/BCC": ["K", "V", "Rb", "Nb", "Mo", "Cs", "Ba", "Ta", "W"],
-                        "X/Diamond": ["Si", "Ge", "Sn"],
-                        },
-                    "Quantum ESPRESSO@PW|SSSP-prec-v1.3": {
-                        "X/SC": ["Po"],
-                        "X/FCC": ["Ne", "Al", "Ar", "Ca", "Cu", "Kr", "Sr", "Rh", "Pd", "Ag", "Xe", "Ir", "Pt", "Au", "Pb", "Rn"],
-                        "X/BCC": ["K", "V", "Rb", "Nb", "Mo", "Cs", "Ba", "Ta", "W"],
-                        "X/Diamond": ["Si", "Ge", "Sn"],
-                        },
+        if sys.argv[1] == "SI-29-vs-960-highlight":
+            # Figure S39
+            config['USE_AE_AVERAGE_AS_REFERENCE'] = True
+            config['LABELS_KEY'] = 'methods-main'
+            config['ONLY_CODES'] = ["CASTEP@PW|C19MK2", "Quantum ESPRESSO@PW|SSSP-prec-v1.3"]
+            config['QUANTITIES']=["epsilon"]
+            config['HIGHLIGHT'] = {
+                "unaries": {
+                    "epsilon" : {
+                        "CASTEP@PW|C19MK2": {
+                            "X/SC": ["Po"],
+                            "X/FCC": ["Ne", "Al", "Ar", "Ca", "Cu", "Kr", "Sr", "Rh", "Pd", "Ag", "Xe", "Ir", "Pt", "Au", "Pb", "Rn"],
+                            "X/BCC": ["K", "V", "Rb", "Nb", "Mo", "Cs", "Ba", "Ta", "W"],
+                            "X/Diamond": ["Si", "Ge", "Sn"],
+                            },
+                        "Quantum ESPRESSO@PW|SSSP-prec-v1.3": {
+                            "X/SC": ["Po"],
+                            "X/FCC": ["Ne", "Al", "Ar", "Ca", "Cu", "Kr", "Sr", "Rh", "Pd", "Ag", "Xe", "Ir", "Pt", "Au", "Pb", "Rn"],
+                            "X/BCC": ["K", "V", "Rb", "Nb", "Mo", "Cs", "Ba", "Ta", "W"],
+                            "X/Diamond": ["Si", "Ge", "Sn"],
+                            },
+                    }
                 }
             }
-        }
 
-    if sys.argv[1] == "SI-VASP-1":
-        # S27
-        USE_AE_AVERAGE_AS_REFERENCE = True
-        LABELS_KEY = 'methods-supplementary'
-        ONLY_CODES = ["VASP@PW|PBErec-PAW54*|defCutoff", "VASP@PW|PBErec-PAW54*|800Cutoff"]
-        QUANTITIES=["epsilon"]
-        SET_NAMES = ['unaries']
+        if sys.argv[1] == "SI-VASP-1":
+            # S27
+            config['USE_AE_AVERAGE_AS_REFERENCE'] = True
+            config['LABELS_KEY'] = 'methods-supplementary'
+            config['ONLY_CODES'] = ["VASP@PW|PBErec-PAW54*|defCutoff", "VASP@PW|PBErec-PAW54*|800Cutoff"]
+            config['QUANTITIES']=["epsilon"]
+            config['SET_NAMES'] = ['unaries']
 
-    if sys.argv[1] == "SI-VASP-2":
-        # S27
-        USE_AE_AVERAGE_AS_REFERENCE = True
-        LABELS_KEY = 'methods-main'
-        ONLY_CODES = ["VASP@PW|GW-PAW54*"]
-        QUANTITIES=["epsilon"]
-        SET_NAMES = ['unaries']
+        if sys.argv[1] == "SI-VASP-2":
+            # S27
+            config['USE_AE_AVERAGE_AS_REFERENCE'] = True
+            config['LABELS_KEY'] = 'methods-main'
+            config['ONLY_CODES'] = ["VASP@PW|GW-PAW54*"]
+            config['QUANTITIES']=["epsilon"]
+            config['SET_NAMES'] = ['unaries']
 
 
-    if sys.argv[1] == "SI-PSEUDODOJO-SECTION-1":
-        # Section S16
-        USE_AE_AVERAGE_AS_REFERENCE = False
-        REFERENCE_CODE_LABEL = "ABINIT@PW|PseudoDojo-v0.4"
-        LABELS_KEY = 'methods-supplementary'
-        ONLY_CODES = ["CASTEP@PW|PseudoDojo-v0.4-trim"]
-        QUANTITIES=["epsilon"]
+        if sys.argv[1] == "SI-PSEUDODOJO-SECTION-1":
+            # Section S16
+            config['USE_AE_AVERAGE_AS_REFERENCE'] = False
+            config['REFERENCE_CODE_LABEL'] = "ABINIT@PW|PseudoDojo-v0.4"
+            config['LABELS_KEY'] = 'methods-supplementary'
+            config['ONLY_CODES'] = ["CASTEP@PW|PseudoDojo-v0.4-trim"]
+            config['QUANTITIES']=["epsilon"]
 
-    if sys.argv[1] == "SI-PSEUDODOJO-SECTION-2":
-        # Section S16
-        USE_AE_AVERAGE_AS_REFERENCE = False
-        REFERENCE_CODE_LABEL = "ABINIT@PW|PseudoDojo-v0.4"
-        LABELS_KEY = 'methods-supplementary'
-        ONLY_CODES = ["Quantum ESPRESSO@PW|PseudoDojo-v0.4-trim"]
-        QUANTITIES=["epsilon"]
+        if sys.argv[1] == "SI-PSEUDODOJO-SECTION-2":
+            # Section S16
+            config['USE_AE_AVERAGE_AS_REFERENCE'] = False
+            config['REFERENCE_CODE_LABEL'] = "ABINIT@PW|PseudoDojo-v0.4"
+            config['LABELS_KEY'] = 'methods-supplementary'
+            config['ONLY_CODES'] = ["Quantum ESPRESSO@PW|PseudoDojo-v0.4-trim"]
+            config['QUANTITIES']=["epsilon"]
 
-    if sys.argv[1] == "SI-PSEUDODOJO-SECTION-3":
-        # Section S16
-        USE_AE_AVERAGE_AS_REFERENCE = False
-        REFERENCE_CODE_LABEL = "CASTEP@PW|PseudoDojo-v0.4-trim"
-        LABELS_KEY = 'methods-supplementary'
-        ONLY_CODES = ["Quantum ESPRESSO@PW|PseudoDojo-v0.4-trim"]
-        QUANTITIES=["epsilon"]
+        if sys.argv[1] == "SI-PSEUDODOJO-SECTION-3":
+            # Section S16
+            config['USE_AE_AVERAGE_AS_REFERENCE'] = False
+            config['REFERENCE_CODE_LABEL'] = "CASTEP@PW|PseudoDojo-v0.4-trim"
+            config['LABELS_KEY'] = 'methods-supplementary'
+            config['ONLY_CODES'] = ["Quantum ESPRESSO@PW|PseudoDojo-v0.4-trim"]
+            config['QUANTITIES']=["epsilon"]
 
-    if sys.argv[1] == "SI-PSEUDODOJO-SECTION-4":
-        # Section S16
-        USE_AE_AVERAGE_AS_REFERENCE = False
-        REFERENCE_CODE_LABEL = "SIRIUS/CP2K@PW|SSSP-prec-v1.2"
-        LABELS_KEY = 'methods-supplementary'
-        ONLY_CODES = ["Quantum ESPRESSO@PW|SSSP-prec-v1.2"]
-        QUANTITIES=["epsilon"]
-
+        if sys.argv[1] == "SI-PSEUDODOJO-SECTION-4":
+            # Section S16
+            config['USE_AE_AVERAGE_AS_REFERENCE'] = False
+            config['REFERENCE_CODE_LABEL'] = "SIRIUS/CP2K@PW|SSSP-prec-v1.2"
+            config['LABELS_KEY'] = 'methods-supplementary'
+            config['ONLY_CODES'] = ["Quantum ESPRESSO@PW|SSSP-prec-v1.2"]
+            config['QUANTITIES']=["epsilon"]
+    
+    return config
 ## ------------------------------------------------------------------------------------------------
 
 from bokeh.models import (
@@ -195,9 +201,9 @@ from matplotlib.cm import (
 from pandas import options
 from typing import List
 import warnings
-from bokeh.io import export_svg
+from bokeh.io import export_svg, output_notebook
 
-def make_quality_matching_cmap(quantity):
+def make_quality_matching_cmap(quantity, config):
     """
     Custom colormap matching the excellent/good/bad thresholds
     """
@@ -216,10 +222,10 @@ def make_quality_matching_cmap(quantity):
     num_colors= 256
     high = max(cvals)
 
-    if quantity in CBAR_MAX_DICT:
+    if quantity in config['CBAR_MAX_DICT']:
         # cap the colorbar at max_value
-        num_colors = int(round(CBAR_MAX_DICT[quantity]/colorbar_max*256))
-        high = CBAR_MAX_DICT[quantity]
+        num_colors = int(round(config['CBAR_MAX_DICT'][quantity]/colorbar_max*256))
+        high = config['CBAR_MAX_DICT'][quantity]
 
     custom_rgb = (255 * cmap(range(num_colors))).astype('int')
     bokeh_palette = [RGB(*tuple(rgb)).to_hex() for rgb in custom_rgb]
@@ -291,20 +297,19 @@ quantity_for_comparison_map = {
     "epsilon": qc.epsilon
 }
 
-def load_data(SET_NAME):
+def load_data(SET_NAME, config):
 
-    DATA_FOLDER = "../../../code-data"
-    with open(os.path.join(DATA_FOLDER, "labels.json")) as fhandle:
+    with open(os.path.join(config['DATA_FOLDER'], "labels.json")) as fhandle:
         labels_data = json.load(fhandle)
     
-    if USE_AE_AVERAGE_AS_REFERENCE:
+    if config['USE_AE_AVERAGE_AS_REFERENCE']:
         reference_data_files = labels_data['references']['all-electron average']
         reference_short_label = "ae"
     else:
-        reference_data_files = labels_data[LABELS_KEY][REFERENCE_CODE_LABEL]
-        reference_short_label = labels_data[LABELS_KEY][REFERENCE_CODE_LABEL]['short_label']
+        reference_data_files = labels_data[config['LABELS_KEY']][config['REFERENCE_CODE_LABEL']]
+        reference_short_label = labels_data[config['LABELS_KEY']][config['REFERENCE_CODE_LABEL']]['short_label']
     try:
-        with open(os.path.join(DATA_FOLDER, reference_data_files[SET_NAME])) as fhandle:
+        with open(os.path.join(config['DATA_FOLDER'], reference_data_files[SET_NAME])) as fhandle:
             compare_plugin_data = json.load(fhandle)
             if not compare_plugin_data['script_version'] in EXPECTED_SCRIPT_VERSION:
                 raise ValueError(
@@ -318,11 +323,11 @@ def load_data(SET_NAME):
 
     code_results = {}
     short_labels = {}
-    for code_label in labels_data[LABELS_KEY]:
-        if ONLY_CODES is not None and code_label not in ONLY_CODES:
+    for code_label in labels_data[config['LABELS_KEY']]:
+        if config['ONLY_CODES'] is not None and code_label not in config['ONLY_CODES']:
             continue
-        short_labels[code_label] = labels_data[LABELS_KEY][code_label]['short_label']
-        with open(os.path.join(DATA_FOLDER, labels_data[LABELS_KEY][code_label][SET_NAME])) as fhandle:
+        short_labels[code_label] = labels_data[config['LABELS_KEY']][code_label]['short_label']
+        with open(os.path.join(config['DATA_FOLDER'], labels_data[config['LABELS_KEY']][code_label][SET_NAME])) as fhandle:
             code_results[code_label] = json.load(fhandle)
             if not code_results[code_label]['script_version'] in EXPECTED_SCRIPT_VERSION:
                 raise ValueError(
@@ -344,7 +349,7 @@ def load_data(SET_NAME):
 def calculate_quantities(plugin_data, compare_plugin_data, QUANTITY):
     prefactor = PREFACTOR_DICT.get(QUANTITY, 1.)
 
-    all_systems = set(plugin_data['eos_data'].keys())
+    # all_systems = set(plugin_data['eos_data'].keys())
     all_systems = set(plugin_data['BM_fit_data'].keys())
     #all_systems.update(compare_plugin_data['BM_fit_data'].keys())
 
@@ -363,8 +368,9 @@ def calculate_quantities(plugin_data, compare_plugin_data, QUANTITY):
 
     progress_bar = tqdm.tqdm(sorted(all_systems))
     for element_and_configuration in progress_bar:
-        progress_bar.set_description(f"{element_and_configuration:12s}")
-        progress_bar.refresh()
+        # Removed this as it's more convenient in jupyter notebooks
+        # progress_bar.set_description(f"{element_and_configuration:12s}")
+        # progress_bar.refresh()
 
         element, configuration = element_and_configuration.split('-')
         # Get the data for the reference plugin
@@ -428,7 +434,7 @@ def export_json_file(SET_NAME, QUANTITY, collect, list_confs, short_labels, plug
     with open(f"{QUANTITY}-{SET_NAME}-{short_labels[plugin].replace(' ', '_')}-vs-{reference_short_label.replace(' ', '_')}.json", 'w') as fhandle:
         json.dump(data_to_export, fhandle)
 
-def create_periodic_table(SET_NAME, QUANTITY, collect, list_confs, short_labels, plugin, reference_short_label, unaries, SET_MAX_SCALE):
+def create_periodic_table(SET_NAME, QUANTITY, collect, list_confs, short_labels, plugin, reference_short_label, unaries, SET_MAX_SCALE, config):
 
     width = 1050
     width_cbar = 80 # needs to be manually adjusted to make the quads square...
@@ -444,7 +450,7 @@ def create_periodic_table(SET_NAME, QUANTITY, collect, list_confs, short_labels,
     #over_value = None
     over_value = SET_MAX_SCALE
 
-    over_color = OUTLIER_COLOR # "#140F0E"
+    over_color = config['OUTLIER_COLOR'] # "#140F0E"
     special_elements = None
     special_color = "#6F3023"
 
@@ -502,10 +508,10 @@ def create_periodic_table(SET_NAME, QUANTITY, collect, list_confs, short_labels,
         if len(data) != len(data_elements):
             raise ValueError("Unequal number of atomic elements and data points")
 
-        if CMAP_TYPE == "simple":
+        if config['CMAP_TYPE'] == "simple":
             norm, cmap, color_mapper = make_simple_cmap(data, high, min_data, cmap_name=cmap_name, log_scale=log_scale)
-        elif CMAP_TYPE == "quality":
-            norm, cmap, color_mapper = make_quality_matching_cmap(QUANTITY)
+        elif config['CMAP_TYPE'] == "quality":
+            norm, cmap, color_mapper = make_quality_matching_cmap(QUANTITY, config)
         else:
             raise ValueError("Unknown colormap type!")
 
@@ -541,7 +547,7 @@ def create_periodic_table(SET_NAME, QUANTITY, collect, list_confs, short_labels,
                 non_excellent.append(f"{data_element}({conf})")
             
             try:                
-                highlight = data_element in HIGHLIGHT[SET_NAME][QUANTITY][plugin][conf]
+                highlight = data_element in config['HIGHLIGHT'][SET_NAME][QUANTITY][plugin][conf]
                 highlight_list[conf][element_index] = 1.0 if highlight else 0.0
             except KeyError:
                 pass
@@ -575,7 +581,7 @@ def create_periodic_table(SET_NAME, QUANTITY, collect, list_confs, short_labels,
         # Plot the periodic table
         p = figure(x_range=[0,19], y_range=[11,0], tools="save", match_aspect=True, output_backend="svg")
         p.toolbar.logo = None
-        p.toolbar.tools = []
+        p.toolbar.tools = [] if config['SHOW_PLOT'] is False else ["save"]
         p.toolbar_location = None
         p.plot_width = width
         p.outline_line_color = None
@@ -656,7 +662,7 @@ def create_periodic_table(SET_NAME, QUANTITY, collect, list_confs, short_labels,
         # Plot the periodic table
         p = figure(x_range=[0,19], y_range=[11,0], tools="save", output_backend="svg")
         p.toolbar.logo = None
-        p.toolbar.tools = []
+        p.toolbar.tools = [] if config['SHOW_PLOT'] is False else ["save"]
         p.toolbar_location = None
         p.plot_width = width - width_cbar
         p.outline_line_color = None
@@ -702,8 +708,8 @@ def create_periodic_table(SET_NAME, QUANTITY, collect, list_confs, short_labels,
             )
 
     for color, view,is_bold in [
-        ("#333333", CDSView(source=source, filters=[BooleanFilter(elements["atomic number"] <= 96)]), False),
-        ("#333333", CDSView(source=source, filters=[BooleanFilter(elements["atomic number"] > 96)]), False),
+        ("#333333", CDSView(source=source, filters=[BooleanFilter(elements["atomic number"] <= Z_MAX)]), False),
+        ("#333333", CDSView(source=source, filters=[BooleanFilter(elements["atomic number"] > Z_MAX)]), False),
         ## Do not use the following 4 lines, looks ugly
         ## (it was an attempt of making a white border
         ## around the black text)
@@ -736,7 +742,7 @@ def create_periodic_table(SET_NAME, QUANTITY, collect, list_confs, short_labels,
         )
         #p.text(x=x, y=y, text="atomic_number", text_font_size="11pt", **text_props)
 
-    reference_label = 'all-electron average' if USE_AE_AVERAGE_AS_REFERENCE else REFERENCE_CODE_LABEL
+    reference_label = 'all-electron average' if config['USE_AE_AVERAGE_AS_REFERENCE'] else config['REFERENCE_CODE_LABEL']
     p.title = f"{UNICODE_QUANTITY[QUANTITY]} for {plugin} vs. {reference_label}"
     p.title.text_font_size = '16pt'
 
@@ -761,12 +767,15 @@ def create_periodic_table(SET_NAME, QUANTITY, collect, list_confs, short_labels,
     p.grid.grid_line_color = None
 
         # Open in a browser
-    if SHOW_IN_BROWSER:
-        output_file("periodic-table-plot.html")
+    if config['SHOW_PLOT']:
+        if config['SHOW_PLOT'] == "notebook":
+            output_notebook()
+        elif config['SHOW_PLOT'] == "browser":
+            output_file(f"periodic-table-{SET_NAME}-{short_labels[plugin].replace(' ', '_')}-vs-{reference_short_label.replace(' ', '_')}-{QUANTITY}.html")
         show_(p)
     else:
         try:
-            if EXPORT_SVG:
+            if config['EXPORT_SVG']:
                 export_svg(p, filename=f"periodic-table-{SET_NAME}-{short_labels[plugin].replace(' ', '_')}-vs-{reference_short_label.replace(' ', '_')}-{QUANTITY}.svg")
             else:
                 export_png(p, filename=f"periodic-table-{SET_NAME}-{short_labels[plugin].replace(' ', '_')}-vs-{reference_short_label.replace(' ', '_')}-{QUANTITY}.png")
@@ -796,7 +805,7 @@ in this case udpate it).
 
 
 
-def plot_periodic_tables(SET_NAME, QUANTITY, measures_max_and_avg, master_data_dict):
+def plot_periodic_tables(SET_NAME, QUANTITY, measures_max_and_avg, master_data_dict, config):
 
     ld = master_data_dict[SET_NAME]["loaded_data"]
 
@@ -808,27 +817,29 @@ def plot_periodic_tables(SET_NAME, QUANTITY, measures_max_and_avg, master_data_d
         collect = master_data_dict[SET_NAME]["calculated_quantities"][QUANTITY][plugin]
 
         # Way to decide whether is a unaries or an oxides set is a bit fragile.
-        if collect["X/Diamond"]["values"]:
+        if SET_NAME == 'unaries': #collect["X/Diamond"]["values"]:
             unaries = True
             list_confs = ["X/Diamond","X/FCC","X/BCC","X/SC"]
-        else:
+        elif SET_NAME == 'oxides':
             unaries = False
             list_confs = ["X2O3","X2O5","X2O","XO2","XO3","XO"]
+        else:
+            raise ValueError("Unknown set name. Only 'unaries' and 'oxides' are supported.")
 
-        if EXPORT_JSON:
+        if config['EXPORT_JSON']:
             export_json_file(SET_NAME, QUANTITY, collect, list_confs, ld["short_labels"], plugin, ld["reference_short_label"])
 
-        if QUANTITY in SKIP_PLOT_FOR_QUANTITIES:
+        if QUANTITY in config['SKIP_PLOT_FOR_QUANTITIES']:
             continue
 
         ### Determine maximum scale for the colorbar
-        if QUANTITY not in SET_MAX_SCALE_DICT:
+        if QUANTITY not in config['SET_MAX_SCALE_DICT']:
             # 0. Default (None) will take the data maximum of each periodic table separately
             SET_MAX_SCALE = None
-        elif isinstance(SET_MAX_SCALE_DICT[QUANTITY], (int, float)):
+        elif isinstance(config['SET_MAX_SCALE_DICT'][QUANTITY], (int, float)):
             # 1. User defined a fixed maximum
-            SET_MAX_SCALE = SET_MAX_SCALE_DICT[QUANTITY]
-        elif SET_MAX_SCALE_DICT[QUANTITY] == 'max':
+            SET_MAX_SCALE = config['SET_MAX_SCALE_DICT'][QUANTITY]
+        elif config['SET_MAX_SCALE_DICT'][QUANTITY] == 'max':
             # 2. consistent maximum for NU/EPS
             nu_max = measures_max_and_avg[plugin]["nu"]["max"]
             eps_max = measures_max_and_avg[plugin]["epsilon"]["max"]
@@ -839,9 +850,9 @@ def plot_periodic_tables(SET_NAME, QUANTITY, measures_max_and_avg, master_data_d
             elif QUANTITY == "epsilon":
                 SET_MAX_SCALE = effective_nu_max / NU_EPS_FACTOR
 
-        elif isinstance(SET_MAX_SCALE_DICT[QUANTITY], tuple) and SET_MAX_SCALE_DICT[QUANTITY][0] == "avg":
+        elif isinstance(config['SET_MAX_SCALE_DICT'][QUANTITY], tuple) and config['SET_MAX_SCALE_DICT'][QUANTITY][0] == "avg":
             # 3. take the N*avg epsilon and use that for the maximum of NU and EPS
-            n = SET_MAX_SCALE_DICT[QUANTITY][1]
+            n = config['SET_MAX_SCALE_DICT'][QUANTITY][1]
             eps_max_scale = n*measures_max_and_avg[plugin]["epsilon"]["avg"]
             if QUANTITY == "nu":
                 SET_MAX_SCALE = eps_max_scale * NU_EPS_FACTOR
@@ -850,10 +861,10 @@ def plot_periodic_tables(SET_NAME, QUANTITY, measures_max_and_avg, master_data_d
         else:
             raise ValueError("Unknown max scale type!")
 
-        create_periodic_table(SET_NAME, QUANTITY, collect, list_confs, ld["short_labels"], plugin, ld["reference_short_label"], unaries, SET_MAX_SCALE)
+        create_periodic_table(SET_NAME, QUANTITY, collect, list_confs, ld["short_labels"], plugin, ld["reference_short_label"], unaries, SET_MAX_SCALE, config)
 
 
-def find_code_measures_max_and_avg(master_data_dict):
+def find_code_measures_max_and_avg(master_data_dict, config):
     """
     For every code, we plot 4 periodic tables: unaries and oxides for nu and epsilon.
 
@@ -863,11 +874,11 @@ def find_code_measures_max_and_avg(master_data_dict):
 
     tmp = {}
 
-    for SET_NAME in SET_NAMES:
+    for SET_NAME in config['SET_NAMES']:
 
         ld = master_data_dict[SET_NAME]["loaded_data"]
 
-        for QUANTITY in QUANTITIES:
+        for QUANTITY in config['QUANTITIES']:
 
             for plugin, plugin_data in ld["code_results"].items():
 
@@ -899,13 +910,13 @@ def find_code_measures_max_and_avg(master_data_dict):
     return measures_max_and_avg
 
 
-def analyze_stats(master_data_dict):
+def analyze_stats(master_data_dict, config):
 
     stats = {}
 
-    for SET_NAME in SET_NAMES:
+    for SET_NAME in config['SET_NAMES']:
 
-        for QUANTITY in QUANTITIES:
+        for QUANTITY in config['QUANTITIES']:
 
             calc_q = master_data_dict[SET_NAME]["calculated_quantities"][QUANTITY]
 
@@ -939,7 +950,7 @@ def analyze_stats(master_data_dict):
                     ))
                     d["outlier"] += sum(vals_arr > OUTLIER_THRESHOLD[QUANTITY])
 
-    if PRINT_LATEX_CODE:
+    if config['PRINT_LATEX_CODE']:
         # print the latex lines for the captions of S14.
     
         # map from plugin name (before @) to the latex convention
@@ -983,14 +994,16 @@ if __name__ == "__main__":
 
     master_data_dict = {}
 
-    for SET_NAME in SET_NAMES:
-        ld = load_data(SET_NAME)
+    config = _get_config()
+    
+    for SET_NAME in config['SET_NAMES']:
+        ld = load_data(SET_NAME, config)
 
         master_data_dict[SET_NAME] = {
             "loaded_data": ld,
             "calculated_quantities": {}
         }
-        for QUANTITY in QUANTITIES:
+        for QUANTITY in config['QUANTITIES']:
             master_data_dict[SET_NAME]["calculated_quantities"][QUANTITY] = {}
             for plugin, plugin_data in ld["code_results"].items():
                 collect = calculate_quantities(plugin_data, ld["compare_plugin_data"], QUANTITY)
@@ -998,9 +1011,9 @@ if __name__ == "__main__":
 
 
     output_quantity_dict = {}
-    for QUANTITY in QUANTITIES:
+    for QUANTITY in config['QUANTITIES']:
         output_quantity_dict[QUANTITY] = {}
-        for SET_NAME in SET_NAMES:
+        for SET_NAME in config['SET_NAMES']:
             output_quantity_dict[QUANTITY][SET_NAME] = {}
             intermediate_dict = master_data_dict[SET_NAME]['calculated_quantities'][QUANTITY]['WIEN2k@(L)APW+lo+LO']
             for configuration, intermediate_data in intermediate_dict.items():
@@ -1016,18 +1029,18 @@ if __name__ == "__main__":
     print(output_quantity_dict['nu']['unaries'])
     # {'Ac-X/Diamond': 0.04186021792027553, 'Ag-X/Diamond': 0.037339062070366094, ..., 'As-X/BCC': 0.02878620698279048, ...}
 
-    if PRINT_JSON:
+    if config['PRINT_JSON']:
         fname = 'all-measure-quantities-ae.json'
         with open(fname, 'w') as fhandle:
             json.dump(output_quantity_dict, fhandle, indent=2)
         print(f"{fname} written.")
 
-    measures_max_and_avg = find_code_measures_max_and_avg(master_data_dict)
+    measures_max_and_avg = find_code_measures_max_and_avg(master_data_dict, config)
 
 
     print("Plotting the periodic tables.")
-    for SET_NAME in SET_NAMES:
-        for QUANTITY in QUANTITIES:
-            plot_periodic_tables(SET_NAME, QUANTITY, measures_max_and_avg, master_data_dict)
+    for SET_NAME in config['SET_NAMES']:
+        for QUANTITY in config['QUANTITIES']:
+            plot_periodic_tables(SET_NAME, QUANTITY, measures_max_and_avg, master_data_dict, config)
 
-    analyze_stats(master_data_dict)
+    analyze_stats(master_data_dict, config)
