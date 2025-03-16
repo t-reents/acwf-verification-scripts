@@ -188,6 +188,7 @@ from bokeh.io import show as show_, export_png, export_svg
 from bokeh.sampledata.periodic_table import elements
 from bokeh.transform import dodge
 from bokeh.colors import RGB
+from bokeh.models import SaveTool
 from matplotlib.colors import Normalize, LogNorm, to_hex, LinearSegmentedColormap
 from matplotlib.cm import (
     plasma,
@@ -581,7 +582,7 @@ def create_periodic_table(SET_NAME, QUANTITY, collect, list_confs, short_labels,
         # Plot the periodic table
         p = figure(x_range=[0,19], y_range=[11,0], tools="save", match_aspect=True, output_backend="svg")
         p.toolbar.logo = None
-        p.toolbar.tools = [] if config['SHOW_PLOT'] is False else ["save"]
+        p.toolbar.tools = [] if config['SHOW_PLOT'] is False else [SaveTool()]
         p.toolbar_location = None
         p.plot_width = width
         p.outline_line_color = None
@@ -662,7 +663,7 @@ def create_periodic_table(SET_NAME, QUANTITY, collect, list_confs, short_labels,
         # Plot the periodic table
         p = figure(x_range=[0,19], y_range=[11,0], tools="save", output_backend="svg")
         p.toolbar.logo = None
-        p.toolbar.tools = [] if config['SHOW_PLOT'] is False else ["save"]
+        p.toolbar.tools = [] if config['SHOW_PLOT'] is False else [SaveTool()]
         p.toolbar_location = None
         p.plot_width = width - width_cbar
         p.outline_line_color = None
